@@ -35,12 +35,15 @@ export default function Sidebar({ activePair, onSelect }) {
     }
   }
 
+  const isActive = (to) =>
+    pathname === to || (to !== "/app" && pathname.startsWith(to));
+
   const navMain = useMemo(
     () => [
-      { to: "/", label: "Dashboard", icon: HomeIcon },
-      { to: "/orders", label: "Order Table", icon: ClipboardListIcon },
-      { to: "/positions", label: "Real-Time Positions", icon: ViewGridIcon },
-      { to: "/profile", label: "Profile", icon: ViewGridIcon },
+      { to: "/app", label: "Dashboard", icon: HomeIcon },
+      { to: "/app/orders", label: "Order Table", icon: ClipboardListIcon },
+      { to: "/app/positions", label: "Real-Time Positions", icon: ViewGridIcon },
+      { to: "/app/profile", label: "Profile", icon: ViewGridIcon },
     ],
     []
   );
@@ -128,11 +131,11 @@ export default function Sidebar({ activePair, onSelect }) {
                   title={n.label}
                   className={`
                     group flex items-center gap-3 rounded-xl px-2 py-2 xl:px-3
-                    ${pathname === n.to ? "bg-brand-green/15 text-white" : "hover:bg-white/5 text-white/80"}
+                    ${isActive(n.to) ? "bg-brand-green/15 text-white" : "hover:bg-white/5 text-white/80"}
                   `}
                   onClick={() => setRailOpen(false)}
                 >
-                  <n.icon className={`h-5 w-5 ${pathname === n.to ? "text-brand-green" : "text-white/70"}`} />
+                  <n.icon className={`h-5 w-5 ${isActive(n.to) ? "text-brand-green" : "text-white/70"}`} />
                   <span className={`font-medium ${showText ? "inline" : "hidden xl:inline"}`}>
                     {n.label}
                   </span>
@@ -141,39 +144,44 @@ export default function Sidebar({ activePair, onSelect }) {
             ))}
           </ul>
 
-          {/* NEW: Funds */}
+          {/* Funds */}
           <SectionLabel label="Funds" showText={showText} />
           <ul className="space-y-1">
             <li>
               <Link
-                to="/deposit"
+                to="/app/deposit"
                 title="Deposit"
                 className={`
                   group flex items-center gap-3 rounded-xl px-2 py-2 xl:px-3
-                  ${pathname === "/deposit" ? "bg-brand-green/15 text-white" : "hover:bg-white/5 text-white/80"}
+                  ${isActive("/app/deposit") ? "bg-brand-green/15 text-white" : "hover:bg-white/5 text-white/80"}
                 `}
                 onClick={() => setRailOpen(false)}
               >
                 <CurrencyDollarIcon
-                  className={`h-5 w-5 ${pathname === "/deposit" ? "text-brand-green" : "text-white/70"}`}
+                  className={`h-5 w-5 ${isActive("/app/deposit") ? "text-brand-green" : "text-white/70"}`}
                 />
                 <span className={`font-medium ${showText ? "inline" : "hidden xl:inline"}`}>Deposit</span>
               </Link>
             </li>
             <li>
-              <a
-                href="/withdraw"
+              <Link
+                to="/app/withdraw"
                 title="Withdraw"
-                className="group flex items-center gap-3 rounded-xl px-2 py-2 xl:px-3 hover:bg-white/5 text-white/80"
-                
+                className={`
+                  group flex items-center gap-3 rounded-xl px-2 py-2 xl:px-3
+                  ${isActive("/app/withdraw") ? "bg-brand-green/15 text-white" : "hover:bg-white/5 text-white/80"}
+                `}
+                onClick={() => setRailOpen(false)}
               >
-                <ArrowCircleUpIcon className="h-5 w-5 text-white/70" />
+                <ArrowCircleUpIcon
+                  className={`h-5 w-5 ${isActive("/app/withdraw") ? "text-brand-green" : "text-white/70"}`}
+                />
                 <span className={`font-medium ${showText ? "inline" : "hidden xl:inline"}`}>Withdraw</span>
-              </a>
+              </Link>
             </li>
           </ul>
 
-          {/* Auth */}
+          {/* Authentication */}
           <SectionLabel label="Authentication" showText={showText} />
           <ul className="space-y-1">
             <RailItem

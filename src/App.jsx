@@ -15,11 +15,11 @@ import OrderHistoryTable from "./components/Tables/OrderHistory";
 import Profile from "./pages/Profile";
 import Landing from "./pages/Landing";
 
-// NEW: public pages (create these from the earlier snippets)
 import Register from "./pages/Register";
 import KycPublic from "./pages/KycPublic";
-import DepositPanel from './components/deposit/DepositPanel';
-import WithdrawlPanel from "./components/withdraw/WithdrawPanel";
+import DepositPanel from "./components/deposit/DepositPanel";
+// NOTE: matches the file we created: src/components/withdraw/withdrawpanel.js
+import WithdrawPanel from "./components/withdraw/withdrawpanel";
 
 function AppShell() {
   const [symbol, setSymbol] = useState("EURUSD");
@@ -53,27 +53,28 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        {/* Public flow: Register -> KYC -> (after approval) Login */}
+        {/* Public routes */}
+        <Route path="/" element={<Landing />} />
         <Route path="/register" element={<Register />} />
         <Route path="/kyc" element={<KycPublic />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/home" element={<Landing />} />
 
-        {/* Protected app */}
+        {/* Protected app under /app/* */}
         <Route
+          path="/app"
           element={
             <ProtectedRoute>
               <AppShell />
             </ProtectedRoute>
           }
         >
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/orders" element={<OrderTable />} />
-          <Route path="/positions" element={<PositionsTable />} />
-          <Route path="/order-history" element={<OrderHistoryTable />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path='/deposit' element={<DepositPanel />} />
-          <Route path='/withdraw' element={<WithdrawlPanel />} />
+          <Route index element={<Dashboard />} />
+          <Route path="orders" element={<OrderTable />} />
+          <Route path="positions" element={<PositionsTable />} />
+          <Route path="order-history" element={<OrderHistoryTable />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="deposit" element={<DepositPanel />} />
+          <Route path="withdraw" element={<WithdrawPanel />} />
         </Route>
 
         {/* Fallback */}

@@ -32,7 +32,7 @@ export default function Login() {
         store.setItem("access", data.access);
         store.setItem("refresh", data.refresh);
       }
-      const to = location.state?.from?.pathname || ROUTES.home;
+      const to = location.state?.from?.pathname || "/app";
       navigate(to, { replace: true });
     } catch (e) {
       const code = e?.code || "AUTH_FAILED";
