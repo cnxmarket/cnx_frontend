@@ -162,14 +162,10 @@ export default function Sidebar({ activePair, onSelect }) {
             </li>
             <li>
               <a
-                href="#"
+                href="/withdraw"
                 title="Withdraw"
                 className="group flex items-center gap-3 rounded-xl px-2 py-2 xl:px-3 hover:bg-white/5 text-white/80"
-                onClick={(e) => {
-                  e.preventDefault();
-                  alert("Withdraw flow is coming soon.");
-                  setRailOpen(false);
-                }}
+                
               >
                 <ArrowCircleUpIcon className="h-5 w-5 text-white/70" />
                 <span className={`font-medium ${showText ? "inline" : "hidden xl:inline"}`}>Withdraw</span>

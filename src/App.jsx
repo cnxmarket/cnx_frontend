@@ -19,6 +19,7 @@ import Landing from "./pages/Landing";
 import Register from "./pages/Register";
 import KycPublic from "./pages/KycPublic";
 import DepositPanel from './components/deposit/DepositPanel';
+import WithdrawlPanel from "./components/withdraw/WithdrawPanel";
 
 function AppShell() {
   const [symbol, setSymbol] = useState("EURUSD");
@@ -72,6 +73,7 @@ export default function App() {
           <Route path="/order-history" element={<OrderHistoryTable />} />
           <Route path="/profile" element={<Profile />} />
           <Route path='/deposit' element={<DepositPanel />} />
+          <Route path='/withdraw' element={<WithdrawlPanel />} />
         </Route>
 
         {/* Fallback */}

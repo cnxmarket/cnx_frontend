@@ -1,14 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { API_BASE } from "../../api/config"; // Import API_BASE for ws normalization
+import { API_BASE } from "../../api/config";
 
-// Helper: infer price precision by symbol
-function formatPrice(price, symbol) {
-  if (price == null) return "--";
-  const jpy = /JPY$/.test(symbol);
-  return Number(price).toFixed(jpy ? 3 : 5);
+/* ---------- helpers ---------- */
+
+// Smarter precision by symbol
+function formatPrice(price, symbol = "") {
+  if (price == null || Number.isNaN(Number(price))) return "--";
+  const s = String(symbol).toUpperCase();
+  const isJPY = /JPY$/.test(s);
+  const isCrypto =
+    /USDT$/.test(s) || /(BTC|ETH|SOL|BNB|XRP|DOGE|ADA|MATIC)/.test(s);
+  const d = isJPY ? 3 : isCrypto ? 2 : 5;
+  return Number(price).toFixed(d);
 }
 
-// Normalize API_BASE to ws/wss URL (same as capitalStream.js)
+// Normalize API_BASE → ws/wss
 function toWsBase(base) {
   try {
     const abs = base.startsWith("http")
@@ -25,8 +31,8 @@ function toWsBase(base) {
 
 export default function TickerTopbar({
   symbols = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "BTCUSDT"],
-  speed = 60, // px/sec for marquee
-  labels = {}, // optional map { EURUSD: "Euro", ... } for friendly display
+  speed = 60,
+  labels = {},
 }) {
   const [data, setData] = useState(() =>
     symbols.reduce((acc, s) => {
@@ -35,24 +41,21 @@ export default function TickerTopbar({
     }, {})
   );
 
-  // Stable reference for symbols to prevent unnecessary re-runs
-  const symbolsKey = useMemo(() => symbols.sort().join(","), [symbols]);
+  // stable keys
+  const symbolsKey = useMemo(() => symbols.slice().sort().join(","), [symbols]);
 
-  // Create WebSocket URLs (stable reference)
+  // Recompute ws urls if symbols OR base change
   const wsUrls = useMemo(() => {
     const wsBase = toWsBase(API_BASE);
     return symbols.map((sym) => `${wsBase}/ws/quotes/${sym}/`);
-  }, []); // Only depends on API_BASE, not symbols
+  }, [symbolsKey]); // (API_BASE is constant at runtime in most setups)
 
   useEffect(() => {
-    const sockets = [];
+    const sockets = symbols.map((sym, i) => {
+      const ws = new WebSocket(wsUrls[i]);
 
-    // Create or reuse sockets for each symbol
-    symbols.forEach((sym, index) => {
-      const ws = new WebSocket(wsUrls[index]);
-      
       ws.onopen = () => console.log(`Quote socket opened for ${sym}`);
-      
+
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data || "{}");
@@ -62,9 +65,10 @@ export default function TickerTopbar({
               [sym]: {
                 symbol: msg.symbol || sym,
                 last: parseFloat(msg.last),
-                change_pct: msg.change_pct != null 
-                  ? Number(msg.change_pct) 
-                  : prev[sym]?.change_pct ?? 0,
+                change_pct:
+                  msg.change_pct != null
+                    ? Number(msg.change_pct)
+                    : prev[sym]?.change_pct ?? 0,
                 ts: msg.ts,
               },
             }));
@@ -73,33 +77,25 @@ export default function TickerTopbar({
           console.error(`TickerTopbar ws parse error for ${sym}`, e);
         }
       };
-      
-      ws.onerror = (e) => {
-        console.error(`Quote socket error for ${sym}:`, e);
-      };
-      
-      ws.onclose = () => {
-        console.log(`Quote socket closed for ${sym}`);
-      };
-      
-      sockets.push(ws);
+
+      ws.onerror = (e) => console.error(`Quote socket error for ${sym}:`, e);
+      ws.onclose = () => console.log(`Quote socket closed for ${sym}`);
+
+      return ws;
     });
 
-    // Cleanup function
     return () => {
       sockets.forEach((ws) => {
         try {
-          if (ws.readyState === WebSocket.OPEN) {
-            ws.close(1000, "TickerTopbar cleanup");
-          }
+          if (ws.readyState === WebSocket.OPEN) ws.close(1000, "TickerTopbar cleanup");
         } catch (e) {
           console.error("Error closing WebSocket", e);
         }
       });
     };
-  }, [symbolsKey, wsUrls]); // Only recreate when symbols list or ws base changes
+  }, [symbolsKey, wsUrls]);
 
-  // Build ticker items from state
+  // Build items
   const items = useMemo(() => {
     return symbols.map((sym) => {
       const d = data[sym] || {};
@@ -122,10 +118,8 @@ export default function TickerTopbar({
   useEffect(() => {
     const el = trackRef.current;
     if (!el) return;
-
-    // Width of a single set (half of duplicated content)
     const singleWidth = el.scrollWidth / 2;
-    const duration = singleWidth / speed; // seconds
+    const duration = singleWidth / speed;
     el.style.setProperty("--ticker-duration", `${Math.max(duration, 10)}s`);
   }, [items, speed]);
 
@@ -136,7 +130,7 @@ export default function TickerTopbar({
 
       <div
         ref={trackRef}
-        className="flex items-stretch gap-4 py-3 animate-ticker hover:[animation-play-state:paused]"
+        className="flex items-stretch gap-3 sm:gap-4 py-3 animate-ticker hover:[animation-play-state:paused]"
         style={{ animationDuration: "var(--ticker-duration, 40s)" }}
       >
         {looped.map((t, idx) => (
@@ -165,28 +159,41 @@ function TickerCard({ item }) {
   const pairDisplay = item.symbol.replace(/([A-Z]{3})([A-Z]{3})/, "$1/$2");
 
   return (
-    <div className="
-      min-w-[180px] sm:min-w-[220px] md:min-w-[320px] max-w-[360px] flex-auto
-      rounded-2xl bg-[#0b0f1a] border border-white/10 px-2 sm:px-4 lg:px-5 py-3 
-      flex items-center justify-between"
+    <div
+      className="
+        min-w-[180px] sm:min-w-[220px] md:min-w-[280px] max-w-[360px] flex-auto
+        rounded-2xl bg-[#0b0f1a] border border-white/10 px-3 sm:px-4 lg:px-5 py-3
+        flex items-center justify-between gap-3
+      "
     >
-      {/* Left: label */}
-      <div>
-        <div className="text-xl font-extrabold text-gray-100 leading-5">
+      {/* Left */}
+      <div className="min-w-0">
+        <div className="text-[clamp(12px,1.9vw,16px)] font-semibold text-gray-100 truncate">
           {item.display}
         </div>
-        <div className="text-sm tracking-wide text-slate-300/80">{pairDisplay}</div>
+        <div className="text-[clamp(11px,1.6vw,14px)] tracking-wide text-slate-300/80 truncate">
+          {pairDisplay}
+        </div>
       </div>
 
-      {/* Right: live price + change */}
-      <div className="text-right">
-        <div className="text-2xl font-extrabold text-gray-100">
+      {/* Right */}
+      <div className="min-w-0 text-right">
+        <div
+          className="
+            font-extrabold text-gray-100 font-mono tabular-nums
+            text-[clamp(14px,3.2vw,22px)] leading-6
+            overflow-hidden text-ellipsis
+          "
+          title={item.price != null ? formatPrice(item.price, item.symbol) : "--"}
+        >
           {item.price != null ? formatPrice(item.price, item.symbol) : "--"}
         </div>
-        <div className={`text-base font-semibold ${isUp ? "text-green-400" : "text-red-400"}`}>
+
+        {/* If you want change %, uncomment + keep it compact */}
+        {/* <div className={`text-[clamp(11px,1.4vw,13px)] font-semibold ${isUp ? "text-green-400" : "text-red-400"} truncate`}>
           {isUp ? "+" : ""}
           {(item.changePct ?? 0).toFixed(2)}%
-        </div>
+        </div> */}
       </div>
     </div>
   );

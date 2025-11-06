@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { listOrders } from "../../api/trading"; // Adjust path if needed
+import { listOrders, fetchOrderHistory } from "../../api/trading"; // Adjust path if needed
 import { connectUserStream } from "../../ws/userStream"; // Adjust path
 import { API_BASE } from "../../api/config"; // adjust path as needed
 
@@ -16,14 +16,20 @@ export default function TradesPanel() {
     const realized = Number(realizedRaw ?? 0);
 
     const closedAtRaw =
-      r.closed_at ?? r.close_time ?? r.timestamp ?? r.ts ?? r.time ?? null;
+      r.closed_at ??
+      r.close_time ??
+      r.last_ts ??         // NEW: match your OrderTable.jsx data
+      r.timestamp ??
+      r.ts ??
+      r.time ??
+      null;
 
     const closedAt =
       typeof closedAtRaw === "number"
         ? new Date(closedAtRaw > 2_000_000_000 ? closedAtRaw : closedAtRaw * 1000)
         : closedAtRaw
-        ? new Date(closedAtRaw)
-        : null;
+          ? new Date(closedAtRaw)
+          : null;
 
     return { id, symbol, realized, closedAt };
   };
@@ -44,8 +50,8 @@ export default function TradesPanel() {
       typeof p.open_time === "number"
         ? p.open_time
         : p.open_time
-        ? Date.parse(p.open_time) / 1000
-        : null;
+          ? Date.parse(p.open_time) / 1000
+          : null;
 
     return { id, symbol, side, net_lots, open_price, mark, unreal_pnl, open_time };
   };
@@ -60,16 +66,20 @@ export default function TradesPanel() {
       p.symbol &&
       p.side &&
       Number.isFinite(p.open_price) &&
-      Number(p.net_lots) > 0
+      Number.isFinite(p.net_lots) &&
+      Math.abs(Number(p.net_lots)) > 0   // allow negative for Sell
     );
 
   // --------------------------------------------------------------------------
 
   useEffect(() => {
     // initial history load
-    listOrders()
-      .then((data) => setOrders(normalizeHistory(data)))
-      .catch(() => {});
+    fetchOrderHistory()
+      .then((data) => {
+        const arr = Array.isArray(data) ? data : (data?.results ?? []);
+        setOrders(normalizeHistory(arr));
+      })
+      .catch(() => { });
 
     // realtime stream
     const ws = connectUserStream((msg) => {
@@ -145,21 +155,19 @@ export default function TradesPanel() {
       <div className="flex gap-2 sm:gap-3 mb-4 flex-wrap">
         <button
           onClick={() => setTab("positions")}
-          className={`px-4 sm:px-6 py-2 rounded-full text-sm sm:text-base font-semibold transition ${
-            tab === "positions"
-              ? "bg-green-500/20 text-green-400 border border-green-400/50"
-              : "bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10"
-          }`}
+          className={`px-4 sm:px-6 py-2 rounded-full text-sm sm:text-base font-semibold transition ${tab === "positions"
+            ? "bg-green-500/20 text-green-400 border border-green-400/50"
+            : "bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10"
+            }`}
         >
           Open Positions
         </button>
         <button
           onClick={() => setTab("history")}
-          className={`px-4 sm:px-6 py-2 rounded-full text-sm sm:text-base font-semibold transition ${
-            tab === "history"
-              ? "bg-green-500/20 text-green-400 border border-green-400/50"
-              : "bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10"
-          }`}
+          className={`px-4 sm:px-6 py-2 rounded-full text-sm sm:text-base font-semibold transition ${tab === "history"
+            ? "bg-green-500/20 text-green-400 border border-green-400/50"
+            : "bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10"
+            }`}
         >
           Trade History
         </button>
@@ -216,14 +224,12 @@ function PositionsTable({ data, exitPositionAPI, setPositions }) {
               <td className="px-3 py-2">
                 {sideKnown ? (
                   <span
-                    className={`flex items-center gap-1 ${
-                      pos.side === "Buy" ? "text-blue-400" : "text-red-400"
-                    }`}
+                    className={`flex items-center gap-1 ${pos.side === "Buy" ? "text-blue-400" : "text-red-400"
+                      }`}
                   >
                     <span
-                      className={`inline-block w-2 h-2 rounded-full ${
-                        pos.side === "Buy" ? "bg-blue-400" : "bg-red-400"
-                      }`}
+                      className={`inline-block w-2 h-2 rounded-full ${pos.side === "Buy" ? "bg-blue-400" : "bg-red-400"
+                        }`}
                     />
                     {pos.side}
                   </span>
@@ -234,7 +240,7 @@ function PositionsTable({ data, exitPositionAPI, setPositions }) {
 
               <td className="px-3 py-2 text-right">
                 {Number.isFinite(pos.net_lots)
-                  ? Number(pos.net_lots).toFixed(2)
+                  ? Math.abs(Number(pos.net_lots)).toFixed(2)
                   : "--"}
               </td>
               <td className="px-3 py-2 text-right">
@@ -258,22 +264,21 @@ function PositionsTable({ data, exitPositionAPI, setPositions }) {
               <td className="px-3 py-2 text-right">
                 {pos.open_time
                   ? new Date(pos.open_time * 1000).toLocaleString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
                   : "--"}
               </td>
 
               <td
-                className={`px-3 py-2 text-right font-semibold ${
-                  Number(pos.unreal_pnl) > 0
-                    ? "text-green-400"
-                    : Number(pos.unreal_pnl) < 0
+                className={`px-3 py-2 text-right font-semibold ${Number(pos.unreal_pnl) > 0
+                  ? "text-green-400"
+                  : Number(pos.unreal_pnl) < 0
                     ? "text-red-400"
                     : "text-gray-200"
-                }`}
+                  }`}
               >
                 {pos.unreal_pnl !== null && pos.unreal_pnl !== undefined
                   ? Number(pos.unreal_pnl).toFixed(2)
@@ -307,7 +312,7 @@ function PositionsTable({ data, exitPositionAPI, setPositions }) {
                       setPositions((positions) =>
                         positions.filter((p) => p.id !== pos.id)
                       );
-                    } catch (error) {}
+                    } catch (error) { }
                   }}
                 >
                   <svg
