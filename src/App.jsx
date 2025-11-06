@@ -19,7 +19,8 @@ import Register from "./pages/Register";
 import KycPublic from "./pages/KycPublic";
 import DepositPanel from "./components/deposit/DepositPanel";
 // NOTE: matches the file we created: src/components/withdraw/withdrawpanel.js
-import WithdrawPanel from "./components/withdraw/withdrawpanel";
+import WithdrawlPanel from "./components/withdraw/WithdrawPanel";
+
 
 function AppShell() {
   const [symbol, setSymbol] = useState("EURUSD");
@@ -74,7 +75,7 @@ export default function App() {
           <Route path="order-history" element={<OrderHistoryTable />} />
           <Route path="profile" element={<Profile />} />
           <Route path="deposit" element={<DepositPanel />} />
-          <Route path="withdraw" element={<WithdrawPanel />} />
+          <Route path="withdraw" element={<WithdrawlPanel />} />
         </Route>
 
         {/* Fallback */}
