@@ -15,7 +15,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useMemo } from "react";
 import { logout as apiLogout } from "../../api/auth";
 
-const pairs = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "BTCUSDT"];
+const pairs = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "BTCUSDT", "XAUUSD", "NZDUSD"];
 
 export default function Sidebar({ activePair, onSelect }) {
   const [railOpen, setRailOpen] = useState(false);     // mobile slide-out

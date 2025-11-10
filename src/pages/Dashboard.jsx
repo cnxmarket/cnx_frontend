@@ -11,7 +11,7 @@ import { RefreshIcon, CurrencyDollarIcon, ChartSquareBarIcon } from "@heroicons/
 
 export default function Dashboard() {
   const { symbol, setSymbol } = useOutletContext();
-  const symbols = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "BTCUSDT"];
+  const symbols = ["EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "BTCUSDT" , "XAUUSD", "NZDUSD"];
   const { balance, equity, used_margin, free_margin, refreshCapital } = useCapitalContext();
 
   const headerGap = "5.5rem";
