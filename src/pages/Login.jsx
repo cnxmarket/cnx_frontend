@@ -4,6 +4,8 @@ import { useNavigate, Link, useLocation } from "react-router-dom";
 import { login } from "../api/auth";
 import { ROUTES } from "../routes";
 import AuthMiniFooter from "../components/common/AuthMiniFooter";
+import StatusModal from "../components/common/StatusModal";
+
 
 export default function Login() {
   const navigate = useNavigate();
@@ -17,6 +19,11 @@ export default function Login() {
   const [err, setErr] = useState("");
   const [kycPending, setKycPending] = useState(false);
   const [kycRejected, setKycRejected] = useState(false);
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -66,29 +73,32 @@ export default function Login() {
             <p className="text-slate-500 text-sm mt-1">Sign in to continue.</p>
           </header>
 
-          {kycPending && (
-            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm px-3 py-2">
-              Your KYC is under review.&nbsp;
-              <Link
-                to={`${ROUTES.kyc}?email=${encodeURIComponent(email)}`}
-                className="underline font-medium"
+          {(kycPending || kycRejected) && (
+            <div className={`mb-4 rounded-lg border text-sm px-3 py-2 ${kycPending
+              ? "border-amber-200 bg-amber-50 text-amber-800"
+              : "border-red-200 bg-red-50 text-red-700"
+              }`}>
+              {kycPending
+                ? "Your KYC is under review."
+                : "Your KYC was rejected."}
+              <button
+                type="button"
+                onClick={() => {
+                  setModalTitle(kycPending ? "KYC Under Review" : "KYC Rejected");
+                  setModalMessage(
+                    kycPending
+                      ? "Your KYC has been submitted and is currently under review. Please wait 24-48 Hours for verification."
+                      : "Your KYC was rejected. Please contact support or reverify your details."
+                  );
+                  setModalOpen(true);
+                }}
+                className="ml-2 underline font-medium"
               >
-                View / resubmit KYC
-              </Link>
+                View status
+              </button>
             </div>
           )}
 
-          {kycRejected && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm px-3 py-2">
-              Your KYC was rejected. Please resubmit your documents.&nbsp;
-              <Link
-                to={`${ROUTES.kyc}?email=${encodeURIComponent(email)}`}
-                className="underline font-medium"
-              >
-                Resubmit KYC
-              </Link>
-            </div>
-          )}
 
           {err && !kycPending && !kycRejected && (
             <div className="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">
@@ -165,6 +175,13 @@ export default function Login() {
 
       {/* mini footer (same as Register) */}
       <AuthMiniFooter />
+      <StatusModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={modalTitle}
+        message={modalMessage}
+      />
+
     </div>
   );
 }
