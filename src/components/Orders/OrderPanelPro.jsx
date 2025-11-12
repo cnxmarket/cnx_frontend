@@ -188,7 +188,7 @@ export default function OrderPanelPro({
       </div>
 
       {/* Sell / Buy tiles */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Tile color="red" label="Sell" price={fmt(bid)} />
         <Tile color="blue" label="Buy" price={fmt(ask)} />
       </div>
@@ -302,9 +302,17 @@ function Tile({ color, label, price }) {
   const bgColor = color === "red" ? "bg-red-500/5" : "bg-blue-500/5";
   const borderColor = color === "red" ? "border-red-400/40" : "border-blue-400/40";
   return (
-    <div className={`rounded-xl border ${borderColor} ${bgColor} px-4 py-3`}>
+
+   <div className={`min-w-0 rounded-xl border ${borderColor} ${bgColor} px-4 py-3`}>
       <div className={`${textColor} text-sm mb-1`}>{label}</div>
-      <div className={`${textColor} text-2xl font-extrabold tabular-nums`}>{price}</div>
+
+     <div
+       className={`${textColor} font-extrabold tabular-nums leading-tight
+                   whitespace-nowrap overflow-hidden text-ellipsis
+                   text-[clamp(1.25rem,4.5vw,2.25rem)]`}
+     >
+       {price}
+     </div>
     </div>
   );
 }

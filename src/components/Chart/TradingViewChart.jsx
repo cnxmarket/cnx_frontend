@@ -1,4 +1,18 @@
+// src/components/Chart/TradingViewChart.jsx
 import { useEffect, useLayoutEffect, useRef } from "react";
+
+function toTradingViewSymbol(sym) {
+  const s = (sym || "").toUpperCase().trim();
+
+  // Metals via OANDA
+  if (s === "XAUUSD" || s === "XAGUSD") return `OANDA:${s}`;
+
+  // Crypto via Binance
+  if (s.endsWith("USDT")) return `BINANCE:${s}`;
+
+  // Default: FX majors/minors
+  return `FX:${s}`;
+}
 
 export default function TradingViewChart({
   symbol = "EURUSD",
@@ -33,6 +47,7 @@ export default function TradingViewChart({
     ensureScript().then(() => {
       if (canceled || !containerRef.current) return;
 
+      // clean previous
       if (widgetRef.current?.remove) try { widgetRef.current.remove(); } catch {}
       containerRef.current.innerHTML = "";
 
@@ -41,7 +56,7 @@ export default function TradingViewChart({
 
       widgetRef.current = new window.TradingView.widget({
         autosize: true,
-        symbol: `FX:${symbol}`,
+        symbol: toTradingViewSymbol(symbol), // <-- key change
         interval,
         timezone: "Etc/UTC",
         theme: "dark",
@@ -108,9 +123,7 @@ export default function TradingViewChart({
   });
 
   return (
-    <div
-      className={`relative w-full rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md shadow-lg ${className}`}
-    >
+    <div className={`relative w-full rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md shadow-lg ${className}`}>
       {/* Invisible shim for responsive height */}
       <div
         ref={shimRef}
@@ -118,10 +131,7 @@ export default function TradingViewChart({
         style={height ? { height } : undefined}
       />
       {/* TV chart container absolutely positioned to overlay shim */}
-      <div
-        ref={containerRef}
-        className="absolute inset-0 w-full h-full"
-      />
+      <div ref={containerRef} className="absolute inset-0 w-full h-full" />
     </div>
   );
 }
