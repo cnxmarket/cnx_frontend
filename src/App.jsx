@@ -20,6 +20,7 @@ import KycPublic from "./pages/KycPublic";
 import DepositPanel from "./components/deposit/DepositPanel";
 // NOTE: matches the file we created: src/components/withdraw/withdrawpanel.js
 import WithdrawlPanel from "./components/withdraw/WithdrawPanel";
+import Support from "./pages/Support";
 
 
 function AppShell() {
@@ -76,6 +77,7 @@ export default function App() {
           <Route path="profile" element={<Profile />} />
           <Route path="deposit" element={<DepositPanel />} />
           <Route path="withdraw" element={<WithdrawlPanel />} />
+          <Route path="support" element={<Support />} />
         </Route>
 
         {/* Fallback */}

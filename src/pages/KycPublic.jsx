@@ -1,11 +1,12 @@
 // src/pages/KycPublic.jsx
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { submitKycPublic } from "../api/kyc";
 import { ROUTES } from "../routes";
 import AuthMiniFooter from "../components/common/AuthMiniFooter";
 
 export default function KycPublic() {
+  const navigate = useNavigate();
   const [params] = useSearchParams();
   const [email, setEmail] = useState(params.get("email") || "");
   const [aadhaar, setAadhaar] = useState("");
@@ -14,6 +15,10 @@ export default function KycPublic() {
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0); // visual progress while submitting
+
+  // success modal state
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
 
   // same input style as Login/Register (padding-based)
   const inputBase =
@@ -49,9 +54,16 @@ export default function KycPublic() {
     t = setInterval(tick, 300);
 
     try {
-      await submitKycPublic({ email, aadhaar: aadhaar.replace(/\s/g, ""), frontFile: front, backFile: back });
+      await submitKycPublic({
+        email,
+        aadhaar: aadhaar.replace(/\s/g, ""),
+        frontFile: front,
+        backFile: back,
+      });
       setProgress(100);
-      setNote("✅ KYC submitted. You can log in after admin verification.");
+      // open success modal instead of inline note
+      setSuccessMsg("✅ KYC submitted. You can log in after admin verification.");
+      setShowSuccess(true);
     } catch (e) {
       setNote(e?.message || "KYC submit failed.");
     } finally {
@@ -138,7 +150,13 @@ export default function KycPublic() {
 
             <button
               type="submit"
-              disabled={loading || !email || maskedAadhaar.replace(/\s/g, "").length !== 12 || !front || !back}
+              disabled={
+                loading ||
+                !email ||
+                maskedAadhaar.replace(/\s/g, "").length !== 12 ||
+                !front ||
+                !back
+              }
               className="w-full rounded-lg text-white font-medium transition-colors
                          bg-[linear-gradient(90deg,#16db5e_0%,#12c451_100%)]
                          px-4 py-3 hover:opacity-95 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -147,7 +165,9 @@ export default function KycPublic() {
             </button>
           </form>
 
-          {note && <p className="mt-4 text-sm text-slate-700">{note}</p>}
+          {note && !showSuccess && (
+            <p className="mt-4 text-sm text-slate-700">{note}</p>
+          )}
 
           <p className="text-sm text-slate-600 mt-6">
             Once approved, you can{" "}
@@ -159,6 +179,49 @@ export default function KycPublic() {
       </main>
 
       <AuthMiniFooter />
+
+      {/* Success Modal */}
+      {showSuccess && (
+        <SuccessModal
+          message={successMsg}
+          onOk={() => navigate(ROUTES.login)}
+          onClose={() => setShowSuccess(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ---------- modal (new) ---------- */
+
+function SuccessModal({ message, onOk, onClose }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="kyc-success-title"
+    >
+      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+        <h2 id="kyc-success-title" className="mb-2 text-lg font-semibold text-slate-900">
+          KYC Submitted
+        </h2>
+        <p className="mb-6 text-slate-700">{message}</p>
+        <div className="flex gap-3">
+          <button
+            onClick={onOk}
+            className="flex-1 rounded-lg bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700"
+          >
+            OK
+          </button>
+          <button
+            onClick={onOk}
+            className="rounded-lg border border-slate-300 px-4 py-2 text-slate-700 hover:bg-slate-50"
+          >
+            Close
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

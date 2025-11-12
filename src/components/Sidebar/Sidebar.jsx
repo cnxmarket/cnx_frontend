@@ -104,7 +104,7 @@ export default function Sidebar({ activePair, onSelect }) {
 
           {/* Brand (xl) */}
           <span className="hidden xl:block text-brand-green text-xl font-bold tracking-wide">
-            CNX markets
+            CNX Markets
           </span>
 
           {/* lg-only expand/collapse */}
@@ -195,14 +195,23 @@ export default function Sidebar({ activePair, onSelect }) {
           {/* Support */}
           <SectionLabel label="Support" showText={showText} />
           <ul className="space-y-1">
-            <RailItem
-              icon={SupportIcon}
-              label="Support"
-              onClick={() => alert("Support coming soon")}
-              showText={showText}
-            />
+            <li>
+              <Link
+                to="/app/support"
+                title="Support"
+                className={`
+                  group flex items-center gap-3 rounded-xl px-2 py-2 xl:px-3
+                  ${isActive("/app/support") ? "bg-brand-green/15 text-white" : "hover:bg-white/5 text-white/80"}
+                `}
+                onClick={() => setRailOpen(false)}
+              >
+                <SupportIcon
+                  className={`h-5 w-5 ${isActive("/app/support") ? "text-brand-green" : "text-white/70"}`}
+                />
+                <span className={`font-medium ${showText ? "inline" : "hidden xl:inline"}`}>Support</span>
+              </Link>
+            </li>
           </ul>
-
           {/* FX Pairs */}
           <div className="mt-6">
             <button
