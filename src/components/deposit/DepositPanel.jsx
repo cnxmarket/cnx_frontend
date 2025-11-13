@@ -65,7 +65,7 @@ export default function DepositPanel() {
   const [payerVpa, setPayerVpa] = useState("");
   const [note, setNote] = useState("");
   const [upiResult, setUpiResult] = useState(null); // response after create
-  const minUpi = 10;
+  const minUpi = 5000;
 
   // UPI table
   const [rows, setRows] = useState([]);
